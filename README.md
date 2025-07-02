@@ -19,6 +19,7 @@ Set `multiple` to allow selecting more than one image. When enabled you can pick
 additional files at any time and they are appended to the list instead of
 replacing the previous selection. Use `includeOriginal` if you need the original
 file alongside processed versions.
+
 Each resized image is returned with a name that includes the label and width (e.g. `mobile-720`).
 
 The `onComplete` callback receives the processed image blobs so you can handle
