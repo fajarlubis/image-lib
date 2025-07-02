@@ -7,6 +7,7 @@ import './ImageUploader.css';
 export interface ImageUploaderProps {
   multiple?: boolean;
   process?: boolean;
+  includeOriginal?: boolean;
   sizes?: SizeOption[];
   className?: string;
   style?: React.CSSProperties;
@@ -16,6 +17,7 @@ export interface ImageUploaderProps {
 export const ImageUploader: React.FC<ImageUploaderProps> = ({
   multiple,
   process = true,
+  includeOriginal = false,
   sizes = [
     { width: 1200, name: 'desktop' },
     { width: 720, name: 'mobile' },
@@ -27,23 +29,32 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
 }) => {
   const [progress, setProgress] = useState(0);
   const [previews, setPreviews] = useState<string[]>([]);
+  const [, setResultsState] = useState<ProcessedImage[][]>([]);
   const controller = useRef<AbortController | null>(null);
 
   const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     if (!files.length) return;
 
-    setPreviews(files.map((f) => URL.createObjectURL(f)));
+    setPreviews((prev) =>
+      multiple ? [...prev, ...files.map((f) => URL.createObjectURL(f))] : files.map((f) => URL.createObjectURL(f))
+    );
     controller.current = new AbortController();
 
     const results = await processFiles(files, {
       process,
+      includeOriginal,
       sizes,
       signal: controller.current.signal,
       onProgress: setProgress,
     });
-
-    onComplete?.(results);
+    setResultsState((prev) => {
+      const updated = multiple ? [...prev, ...results] : results;
+      onComplete?.(updated);
+      return updated;
+    });
+    setProgress(0);
+    e.target.value = '';
   };
 
   const handleCancel = () => {
@@ -51,25 +62,47 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
     setProgress(0);
   };
 
+  const handleRemove = (index: number) => {
+    setPreviews((prev) => prev.filter((_, i) => i !== index));
+    setResultsState((prev) => {
+      const updated = prev.filter((_, i) => i !== index);
+      onComplete?.(updated);
+      return updated;
+    });
+  };
+
   return (
     <div className={classNames('image-uploader', className)} style={style}>
-      <input
-        type="file"
-        accept="image/*"
-        onChange={handleChange}
-        multiple={multiple}
-      />
-      {progress > 0 && progress < 100 && (
-        <div className="progress">{progress}%</div>
-      )}
-      {progress > 0 && progress < 100 && (
-        <button onClick={handleCancel}>Cancel</button>
-      )}
       <div className="preview-list">
-        {previews.map((src) => (
-          <img key={src} src={src} className="preview" />
+        {(multiple || previews.length === 0) && (
+          <label className="upload-btn">
+            <span className="upload-icon">+</span>
+            <span>Choose Files</span>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleChange}
+              multiple={multiple}
+            />
+          </label>
+        )}
+        {previews.map((src, i) => (
+          <div key={src} className="preview-container">
+            <img src={src} className="preview" />
+            <button className="remove-btn" onClick={() => handleRemove(i)}>
+              ×
+            </button>
+          </div>
         ))}
       </div>
+      {progress > 0 && progress < 100 && (
+        <div className="upload-status">
+          <div className="progress">{progress}%</div>
+          <button className="cancel-btn" onClick={handleCancel}>
+            Cancel
+          </button>
+        </div>
+      )}
     </div>
   );
 };
