@@ -66,3 +66,21 @@
   gap: 0.5rem;
   align-items: center;
 }
+
+.image-uploader .status-label {
+  margin-top: 4px;
+  font-size: 12px;
+  text-align: center;
+}
+
+.image-uploader .status-label.progress {
+  color: #555;
+}
+
+.image-uploader .status-label.success {
+  color: green;
+}
+
+.image-uploader .status-label.failed {
+  color: red;
+}

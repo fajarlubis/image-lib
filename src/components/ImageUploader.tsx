@@ -4,6 +4,8 @@ import { processFiles } from '../utils/imageProcessor';
 import type { SizeOption, ProcessedImage } from '../utils/imageProcessor';
 import './ImageUploader.css';
 
+export type UploadStatus = 'progress' | 'success' | 'failed';
+
 export interface ImageUploaderProps {
   multiple?: boolean;
   process?: boolean;
@@ -12,6 +14,7 @@ export interface ImageUploaderProps {
   className?: string;
   style?: React.CSSProperties;
   onComplete?: (results: ProcessedImage[][]) => void;
+  statuses?: UploadStatus[];
 }
 
 export const ImageUploader: React.FC<ImageUploaderProps> = ({
@@ -28,10 +31,11 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
   className,
   style,
   onComplete,
+  statuses = [],
 }) => {
   const [progress, setProgress] = useState(0);
   const [previews, setPreviews] = useState<string[]>([]);
-  const [, setResultsState] = useState<ProcessedImage[][]>([]);
+  const resultsRef = useRef<ProcessedImage[][]>([]);
   const controller = useRef<AbortController | null>(null);
 
   const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -50,11 +54,9 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
       signal: controller.current.signal,
       onProgress: setProgress,
     });
-    setResultsState((prev) => {
-      const updated = multiple ? [...prev, ...results] : results;
-      onComplete?.(updated);
-      return updated;
-    });
+    const updated = multiple ? [...resultsRef.current, ...results] : results;
+    resultsRef.current = updated;
+    onComplete?.(updated);
     setProgress(0);
     e.target.value = '';
   };
@@ -66,11 +68,8 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
 
   const handleRemove = (index: number) => {
     setPreviews((prev) => prev.filter((_, i) => i !== index));
-    setResultsState((prev) => {
-      const updated = prev.filter((_, i) => i !== index);
-      onComplete?.(updated);
-      return updated;
-    });
+    resultsRef.current = resultsRef.current.filter((_, i) => i !== index);
+    onComplete?.(resultsRef.current);
   };
 
   return (
@@ -94,6 +93,15 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
             <button className="remove-btn" onClick={() => handleRemove(i)}>
               ×
             </button>
+            {statuses[i] && (
+              <div className={classNames('status-label', statuses[i])}>
+                {statuses[i] === 'progress'
+                  ? 'Uploading...'
+                  : statuses[i] === 'success'
+                  ? 'Uploaded'
+                  : 'Failed'}
+              </div>
+            )}
           </div>
         ))}
       </div>
