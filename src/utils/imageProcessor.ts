@@ -1,6 +1,4 @@
-import { ImagePool } from '@squoosh/lib';
-
-const imagePool = new ImagePool();
+// Simple in-browser image processing utilities using Canvas APIs.
 
 export interface SizeOption {
   width: number;
@@ -18,23 +16,25 @@ export interface ProcessOptions {
   signal?: AbortSignal;
   onProgress?: (percentage: number) => void;
 }
-
+    
 async function compressImage(file: File, sizes: SizeOption[]): Promise<ProcessedImage[]> {
-  const buffer = await file.arrayBuffer();
-  const image = imagePool.ingestImage(buffer);
-
+  const img = await createImageBitmap(file);
+  const aspect = img.width / img.height;
   const results: ProcessedImage[] = [];
 
   for (const size of sizes) {
-    await image.preprocess({ resize: { width: size.width } });
-    await image.encode({ webp: {} });
-    const webp = await image.encodedWith.webp;
-    results.push({
-      name: size.name,
-      blob: new Blob([webp.binary], { type: 'image/webp' }),
-    });
+    const canvas = document.createElement('canvas');
+    canvas.width = size.width;
+    canvas.height = Math.round(size.width / aspect);
+    const ctx = canvas.getContext('2d')!;
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise<Blob>((resolve) =>
+      canvas.toBlob((b) => resolve(b!), 'image/webp')
+    );
+    results.push({ name: size.name, blob });
   }
 
+  img.close();
   return results;
 }
 

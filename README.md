@@ -1,6 +1,6 @@
 # Image Upload Library
 
-This project provides a React component for uploading and processing images in the browser. Images can be optionally converted to WebP using WebAssembly via `@squoosh/lib` and resized into multiple versions (e.g. desktop, mobile and thumbnail).
+This project provides a React component for uploading and processing images directly in the browser. Images can be optionally converted to WebP and resized into multiple versions (e.g. desktop, mobile and thumbnail).
 
 ## Usage
 
