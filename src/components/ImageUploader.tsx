@@ -19,9 +19,11 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
   process = true,
   includeOriginal = false,
   sizes = [
-    { width: 1200, name: 'desktop' },
-    { width: 720, name: 'mobile' },
     { width: 200, name: 'thumb' },
+    { width: 720, name: 'mobile' },
+    { width: 1024, name: 'tablet' },
+    { width: 1440, name: 'desktop' },
+    { width: 1920, name: 'hd' },
   ],
   className,
   style,

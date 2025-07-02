@@ -32,7 +32,7 @@ async function compressImage(file: File, sizes: SizeOption[]): Promise<Processed
     const blob = await new Promise<Blob>((resolve) =>
       canvas.toBlob((b) => resolve(b!), 'image/webp')
     );
-    results.push({ name: size.name, blob });
+    results.push({ name: `${size.name}-${size.width}`, blob });
   }
 
   img.close();
