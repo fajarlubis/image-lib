@@ -1,0 +1,14 @@
+.image-uploader .preview-list {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+.image-uploader .preview {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+.image-uploader .progress {
+  margin-top: 0.5rem;
+}

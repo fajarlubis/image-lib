@@ -1,26 +1,60 @@
-import { ImagePool } from '@squoosh/lib';
+// Simple in-browser image processing utilities using Canvas APIs.
 
-const imagePool = new ImagePool();
+export interface SizeOption {
+  width: number;
+  name: string;
+}
 
-export async function compressImage(
-  file: File,
-  sizes: { width: number; name: string }[]
-) {
-  const buffer = await file.arrayBuffer();
-  const image = imagePool.ingestImage(buffer);
+export interface ProcessedImage {
+  name: string;
+  blob: Blob;
+}
 
-  const results: { name: string; blob: Blob }[] = [];
+export interface ProcessOptions {
+  sizes?: SizeOption[];
+  process?: boolean;
+  signal?: AbortSignal;
+  onProgress?: (percentage: number) => void;
+}
+
+async function compressImage(file: File, sizes: SizeOption[]): Promise<ProcessedImage[]> {
+  const img = await createImageBitmap(file);
+  const aspect = img.width / img.height;
+  const results: ProcessedImage[] = [];
 
   for (const size of sizes) {
-    await image.preprocess({ resize: { width: size.width } });
-    await image.encode({ webp: {} });
+    const canvas = document.createElement('canvas');
+    canvas.width = size.width;
+    canvas.height = Math.round(size.width / aspect);
+    const ctx = canvas.getContext('2d')!;
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise<Blob>((resolve) =>
+      canvas.toBlob((b) => resolve(b!), 'image/webp')
+    );
+    results.push({ name: size.name, blob });
+  }
 
-    const webp = await image.encodedWith.webp;
-    results.push({
-      name: size.name,
-      blob: new Blob([webp.binary], { type: 'image/webp' }),
-    });
+  img.close();
+  return results;
+}
+
+export async function processFiles(files: File[], options: ProcessOptions): Promise<ProcessedImage[][]> {
+  const { process = true, sizes = [], onProgress, signal } = options;
+  const results: ProcessedImage[][] = [];
+  const total = files.length;
+  let done = 0;
+
+  for (const file of files) {
+    if (signal?.aborted) break;
+    const processed = process && sizes.length
+      ? await compressImage(file, sizes)
+      : [{ name: file.name, blob: file }];
+
+    results.push(processed);
+    done += 1;
+    onProgress?.(Math.round((done / total) * 100));
   }
 
   return results;
 }
+
