@@ -13,6 +13,7 @@ export interface ProcessedImage {
 export interface ProcessOptions {
   sizes?: SizeOption[];
   process?: boolean;
+  includeOriginal?: boolean;
   signal?: AbortSignal;
   onProgress?: (percentage: number) => void;
 }
@@ -31,7 +32,7 @@ async function compressImage(file: File, sizes: SizeOption[]): Promise<Processed
     const blob = await new Promise<Blob>((resolve) =>
       canvas.toBlob((b) => resolve(b!), 'image/webp')
     );
-    results.push({ name: size.name, blob });
+    results.push({ name: `${size.name}-${size.width}`, blob });
   }
 
   img.close();
@@ -39,16 +40,20 @@ async function compressImage(file: File, sizes: SizeOption[]): Promise<Processed
 }
 
 export async function processFiles(files: File[], options: ProcessOptions): Promise<ProcessedImage[][]> {
-  const { process = true, sizes = [], onProgress, signal } = options;
+  const { process = true, sizes = [], includeOriginal = false, onProgress, signal } = options;
   const results: ProcessedImage[][] = [];
   const total = files.length;
   let done = 0;
 
   for (const file of files) {
     if (signal?.aborted) break;
-    const processed = process && sizes.length
-      ? await compressImage(file, sizes)
-      : [{ name: file.name, blob: file }];
+    const processed: ProcessedImage[] = [];
+    if (process && sizes.length) {
+      processed.push(...(await compressImage(file, sizes)));
+    }
+    if (!process || includeOriginal || processed.length === 0) {
+      processed.push({ name: file.name, blob: file });
+    }
 
     results.push(processed);
     done += 1;
