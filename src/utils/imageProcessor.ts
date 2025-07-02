@@ -16,7 +16,7 @@ export interface ProcessOptions {
   signal?: AbortSignal;
   onProgress?: (percentage: number) => void;
 }
-
+    
 async function compressImage(file: File, sizes: SizeOption[]): Promise<ProcessedImage[]> {
   const img = await createImageBitmap(file);
   const aspect = img.width / img.height;
