@@ -14,6 +14,7 @@ export interface ImageUploaderProps {
   className?: string;
   style?: React.CSSProperties;
   onComplete?: (results: ProcessedImage[][]) => void;
+  onRetry?: (index: number, files: ProcessedImage[]) => void;
   statuses?: UploadStatus[];
 }
 
@@ -31,6 +32,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
   className,
   style,
   onComplete,
+  onRetry,
   statuses = [],
 }) => {
   const [progress, setProgress] = useState(0);
@@ -56,7 +58,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
     });
     const updated = multiple ? [...resultsRef.current, ...results] : results;
     resultsRef.current = updated;
-    onComplete?.(updated);
+    onComplete?.(results);
     setProgress(0);
     e.target.value = '';
   };
@@ -64,6 +66,11 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
   const handleCancel = () => {
     controller.current?.abort();
     setProgress(0);
+  };
+
+  const handleRetry = (index: number) => {
+    const files = resultsRef.current[index];
+    onRetry?.(index, files);
   };
 
   const handleRemove = (index: number) => {
@@ -94,12 +101,22 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
               ×
             </button>
             {statuses[i] && (
-              <div className={classNames('status-label', statuses[i])}>
-                {statuses[i] === 'progress'
-                  ? 'Uploading...'
-                  : statuses[i] === 'success'
-                  ? 'Uploaded'
-                  : 'Failed'}
+              <div className={classNames('status-overlay', statuses[i])}>
+                <span className="label-text">
+                  {statuses[i] === 'progress'
+                    ? 'Uploading...'
+                    : statuses[i] === 'success'
+                    ? 'Uploaded'
+                    : 'Failed'}
+                </span>
+                {statuses[i] === 'failed' && (
+                  <button
+                    className="retry-btn"
+                    onClick={() => handleRetry(i)}
+                  >
+                    Retry
+                  </button>
+                )}
               </div>
             )}
           </div>
