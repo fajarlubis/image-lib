@@ -1,6 +1,6 @@
 # Image Upload Library
 
-This project provides a React component for uploading and processing images directly in the browser. Images can be optionally converted to WebP and resized into multiple versions such as `hd` (1920px), `desktop` (1440px), `tablet` (1024px), `mobile` (720px) and `thumb` (200px).
+This project provides React and Vue components for uploading and processing images directly in the browser. Images can be optionally converted to WebP and resized into multiple versions such as `hd` (1920px), `desktop` (1440px), `tablet` (1024px), `mobile` (720px) and `thumb` (200px).
 
 ## Usage
 
@@ -15,6 +15,21 @@ import { ImageUploader } from 'image-lib';
 />;
 ```
 
+```vue
+<script setup lang="ts">
+import { ImageUploader } from 'image-lib/vue'
+</script>
+
+<template>
+  <ImageUploader
+    multiple
+    process
+    :include-original="false"
+    @complete="(images) => console.log(images)"
+  />
+</template>
+```
+
 Set `multiple` to allow selecting more than one image. When enabled you can pick
 additional files at any time and they are appended to the list instead of
 replacing the previous selection. Use `includeOriginal` if you need the original
@@ -27,4 +42,4 @@ the actual upload. Thumbnails are displayed with a small remove button and the
 file picker stays on the left so you can add more images. If the container has a
 fixed height the list becomes vertically scrollable.
 
-Run `npm run dev` to start the demo application.
+Run `npm run dev` to start the React demo or `npm run dev:vue` for the Vue demo.
