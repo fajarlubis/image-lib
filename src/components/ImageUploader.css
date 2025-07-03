@@ -67,20 +67,38 @@
   align-items: center;
 }
 
-.image-uploader .status-label {
-  margin-top: 4px;
+.image-uploader .status-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(255, 255, 255, 0.6);
   font-size: 12px;
   text-align: center;
+  border-radius: 4px;
 }
 
-.image-uploader .status-label.progress {
+.image-uploader .status-overlay.progress .label-text {
   color: #555;
 }
 
-.image-uploader .status-label.success {
+.image-uploader .status-overlay.success .label-text {
   color: green;
 }
 
-.image-uploader .status-label.failed {
+.image-uploader .status-overlay.failed .label-text {
   color: red;
+}
+
+.image-uploader .retry-btn {
+  margin-top: 4px;
+  padding: 2px 4px;
+  font-size: 12px;
+  border: none;
+  border-radius: 4px;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  cursor: pointer;
 }

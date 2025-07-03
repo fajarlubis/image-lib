@@ -8,42 +8,60 @@ const token =
 
 export default function App() {
   const [statuses, setStatuses] = useState<UploadStatus[]>([]);
+  const [images, setImages] = useState<ProcessedImage[][]>([]);
+
+  const uploadBatch = async (files: ProcessedImage[], index: number) => {
+    const form = new FormData();
+    files.forEach(({ name, blob }) => {
+      form.append(`images[0][${name}]`, blob);
+    });
+    form.append('metadata[0]', JSON.stringify({ index }));
+
+    try {
+      const res = await fetch(
+        'http://localhost:8800/cms/admin/fileupload/batch',
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'x-country': 'Indonesia',
+            'x-token': token,
+          },
+          body: form,
+        }
+      );
+      if (!res.ok) throw new Error(`Upload ${index} failed`);
+      setStatuses((prev) => prev.map((s, i) => (i === index ? 'success' : s)));
+    } catch {
+      setStatuses((prev) => prev.map((s, i) => (i === index ? 'failed' : s)));
+    }
+  };
 
   const handleComplete = async (results: ProcessedImage[][]) => {
-    setStatuses(Array(results.length).fill('progress'));
+    const start = statuses.length;
+    setImages((prev) => [...prev, ...results]);
+    setStatuses((prev) => [...prev, ...Array(results.length).fill('progress')]);
 
     for (const [idx, files] of results.entries()) {
-      const form = new FormData();
-      files.forEach(({ name, blob }) => {
-        form.append(`images[0][${name}]`, blob);
-      });
-      form.append('metadata[0]', JSON.stringify({ index: idx }));
-
-      try {
-        const res = await fetch(
-          'http://localhost:8800/cms/admin/fileupload/batch',
-          {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'x-country': 'Indonesia',
-              'x-token': token,
-            },
-            body: form,
-          }
-        );
-        if (!res.ok) throw new Error(`Upload ${idx} failed`);
-        setStatuses((prev) => prev.map((s, i) => (i === idx ? 'success' : s)));
-      } catch {
-        setStatuses((prev) => prev.map((s, i) => (i === idx ? 'failed' : s)));
-      }
+      const global = start + idx;
+      await uploadBatch(files, global);
     }
+  };
+
+  const handleRetry = async (index: number, files: ProcessedImage[]) => {
+    setStatuses((prev) => prev.map((s, i) => (i === index ? 'progress' : s)));
+    await uploadBatch(files, index);
   };
 
   return (
     <div style={{ padding: '2rem' }}>
       <h1>Image Upload Demo</h1>
-      <ImageUploader multiple onComplete={handleComplete} statuses={statuses} />
+      <ImageUploader
+        multiple
+        onComplete={handleComplete}
+        onRetry={handleRetry}
+        statuses={statuses}
+      />
     </div>
   );
 }
